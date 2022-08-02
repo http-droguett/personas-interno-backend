@@ -1,0 +1,27 @@
+{
+  "name": "api_ranco",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "externalip": "^1.0.2",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.27.0",
+    "morgan": "^1.10.0",
+    "mssql": "^6.2.0",
+    "multer": "^1.4.2",
+    "nodemailer": "^6.4.11",
+    "public-ip": "^4.0.1",
+    "tedious": "^8.3.0"
+  }
+}
