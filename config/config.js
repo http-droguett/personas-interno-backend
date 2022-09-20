@@ -6,8 +6,9 @@ module.exports = {
         //Ambiente Testing
         user: 'postulanteranco',
         password: '#Ranoc2020.,2021',
-        server: '186.67.60.123',
-        port: 18034,
+        server: 'venus',
+        // server: '186.67.60.123',
+        // port: 18034,
         database: 'Personas',
         options: {
             encrypt: false,

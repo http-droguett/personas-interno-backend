@@ -29,12 +29,12 @@ const smtpTransport = nodemailer.createTransport({
 });
 
 router.post('/send', ensureToken,function(req,res){
-    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,situacion_migratoria,nivel_educacional,talla_ropa,numero_calzado} = req.body;
+    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,situacion_migratoria,nivel_educacional,talla_ropa,numero_calzado,temporada} = req.body;
     const user = { id: 3 };
     const token = jwt.sign({ user }, 'Api_Ranco_Key_01_04_2019', {expiresIn: '168h'})
     host=req.get('host');
-    link="http://postulaciones.ranco.cl:3000/verify?token="+token+"&rut="+rut+"&fecha="+fecha_postulacion+"&email="+email;
-    link2="http://postulaciones.ranco.cl:3000/remove_postulante?token="+token+"&rut="+rut+"&fecha="+fecha_postulacion+"&email="+email;
+    link="https://postulaciones.ranco.cl:3000/verify?token="+token+"&rut="+rut+"&fecha="+fecha_postulacion+"&email="+email+"&temporada="+temporada;
+    link2="https://postulaciones.ranco.cl:3000/remove_postulante?token="+token+"&rut="+rut+"&fecha="+fecha_postulacion+"&email="+email;
     mailOptions={
         from: 'Postulaciones Ranco || app@ranco.cl',
         to : email,
@@ -226,9 +226,8 @@ async function send_Cv(rut,nombre,filepath){
 });
 };
 
-async function update_email(rut,fecha) {
-
- const query = `UPDATE POSTULANTE  SET email_validado  = 1 WHERE RUT = '${rut}' and fecha_postulacion = '${fecha}' and temporada = 'R6' `;
+async function update_email(rut,fecha,temporada) {
+ const query = `EXEC POSTULANTE_U '${rut}','${fecha}','${temporada}' `;
  const pool = await poolPromise;
  const result = await pool.request()
     .query(query);
@@ -252,20 +251,20 @@ async function segunda_confirmacion(email) {
 }
 
 router.get('/verify', async function(req,res){
-    const {rut,token,fecha,email} = req.query;
+    const {rut,token,fecha,email,temporada} = req.query;
         console.log("Domain is matched. Information is from Authentic email");
         jwt.verify(token, 'Api_Ranco_Key_01_04_2019', (err, verifiedJwt) => {
             if(err){
                 console.error(err.message)
                 if(err.message === 'jwt expired'){
-                  res.end("<h1>Token expirado, No pudo ser verificado el email, favor de postular nuevamente <a href='http://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
+                  res.end("<h1>Token expirado, No pudo ser verificado el email, favor de postular nuevamente <a href='https://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
               }
-            res.end("<h1>Algo salio mal, favor de postular nuevamente. <a href='http://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
+            res.end("<h1>Algo salio mal, favor de postular nuevamente. <a href='https://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
             }
             else{
               console.log(verifiedJwt,'validado')
               res.end("<h1>Email "+email+" Fue verificado satisfactoriamente !!!");
-              update_email(rut,fecha);
+              update_email(rut,fecha,temporada);
               segunda_confirmacion(email);
             }
           });
@@ -304,10 +303,12 @@ upload(req, res, function (err) {
 
 });
 
+
 router.get(`/postulantes_validados`, ensureToken, async(req, res) => {
 
             try {
-                const query = `SELECT * FROM POSTULANTE_validado`;
+                const {opt,temporada} = req.query;
+                const query = `EXEC PINT_G '${temporada}',${opt}`;
                 const pool = await poolPromise;
                 const result = await pool.request()
                     .query(query);
@@ -320,88 +321,11 @@ router.get(`/postulantes_validados`, ensureToken, async(req, res) => {
             }
 });
 
-router.get(`/postulantes_validados_excel`, ensureToken, async(req, res) => {
-
-    try {
-        const query = `SELECT * FROM Postulante_validado_Excel`;
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .query(query);
-        res.json(result.recordset);
-        console.log(result.recordset)
-    } catch (err) {
-        res.status(500);
-        res.send(err.message);
-        console.log(err.message);
-    }
-});
-
-router.get(`/postulantes_contratados`, ensureToken, async(req, res) => {
-
-            try {
-                const query = `SELECT * FROM postulante_contratado_vista ORDER BY estado desc`;
-                const pool = await poolPromise;
-                const result = await pool.request()
-                    .query(query);
-                res.json(result.recordset);
-            } catch (err) {
-                res.status(500);
-                res.send(err.message);
-                console.log(err.message);
-            }
-});
-router.get(`/postulantes_contratados_excel`, ensureToken, async(req, res) => {
-
-    try {
-        const query = `SELECT * FROM postulante_contratado_vista_Excel ORDER BY estado desc`;
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .query(query);
-        res.json(result.recordset);
-    } catch (err) {
-        res.status(500);
-        res.send(err.message);
-        console.log(err.message);
-    }
-});
-router.get(`/postulante`, ensureToken, async(req, res) => {
-
-    const {rut} = req.query
-
-    try {
-        const query = `SELECT * FROM POSTULANTE WHERE rut = '${rut}' AND temporada = 'R6'`;
-        console.log(query)
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .query(query);
-        res.json(result.recordset);
-    } catch (err) {
-        res.status(500);
-        res.send(err.message);
-        console.log(err.message);
-    }
-});
-
-router.get(`/postulante_rut`, ensureToken, async(req, res) => {
-    const {rut} = req.query
-    try {
-        const query = `SELECT rut FROM POSTULANTE WHERE rut = '${rut}' and email_validado = '1' and temporada = 'R6'`;
-        console.log(query)
-        const pool = await poolPromise;
-        const result = await pool.request()
-            .query(query);
-        res.json(result.recordset);
-    } catch (err) {
-        res.status(500);
-        res.send(err.message);
-        console.log(err.message);
-    }
-});
 
 router.get(`/login`, ensureToken, async(req, res) => {
     const {correo} = req.query
     try {
-        const query = `Exec login '${correo}'`;
+        const query = `EXEC login '${correo}'`;
         console.log(query)
         const pool = await poolPromise;
         const result = await pool.request()
@@ -416,10 +340,9 @@ router.get(`/login`, ensureToken, async(req, res) => {
 
 router.post(`/postulante`, ensureToken, async(req, res) => {
     
-    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,email_validado,ruta,temporada,situacion_migratoria,nivel_educacional, talla_ropa, numero_calzado} = req.body;
+    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,email_validado,ruta,temporada,situacion_migratoria,nivel_educacional, talla_ropa, numero_calzado,calle,numero,villa} = req.body;
         try {
-            const query = `INSERT INTO POSTULANTE (fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,email_validado,ruta_archivo_cv,temporada,situacion_migratoria,nivel_educacional,talla_ropa,numero_calzado) values( '${fecha_postulacion}','${rut}','${nombres}','${apellidos}','${fecha_nacimiento}','${genero}','${nacionalidad}','${direccion}','${comuna}','${estado_civil}','${email}','${telefono}','${telefono_emergencia}','${tipo_trabajador}','${disponibilidad}','${tipo_inscripcion}','${labor}','${otras_experiencias}',${email_validado},'${ruta}','${temporada}','${situacion_migratoria}','${nivel_educacional}','${talla_ropa}','${numero_calzado}') `;
-            console.log(query, 'esto');
+            const query = `EXEC POSTULANTE_I '${fecha_postulacion}','${rut}','${nombres}','${apellidos}','${fecha_nacimiento}','${genero}','${nacionalidad}','${direccion}','${comuna}','${estado_civil}','${email}','${telefono}','${telefono_emergencia}','${tipo_trabajador}','${disponibilidad}','${tipo_inscripcion}','${labor}','${otras_experiencias}',${email_validado},'${ruta}','${temporada}','${situacion_migratoria}','${nivel_educacional}','${talla_ropa}','${numero_calzado}','${calle}',${numero},'${villa}' `;
             const pool = await poolPromise;
             const result = await pool.request()
                 .query(query);
@@ -433,53 +356,13 @@ router.post(`/postulante`, ensureToken, async(req, res) => {
 });
 router.post(`/postulante_packing`, ensureToken, async(req, res) => {
     
-    const {fecha_postulacion,labor_actual,cuartel,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,labor_sdt,otras_experiencias,ruta_archivo_cv,ultima_llamada,citacion_trabajar,asiste_trabajar,cuartel_actual,disponible,turno, temporada,situacion_migratoria,telefono_emergencia,nivel_educacional,talla_ropa,numero_calzado} = req.body;
+    const {fecha_postulacion,labor_actual,cuartel,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
+        comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,
+        labor_sdt,otras_experiencias,ruta_archivo_cv,ultima_llamada,citacion_trabajar,asiste_trabajar,
+        cuartel_actual,disponible,turno, temporada,situacion_migratoria,telefono_emergencia,nivel_educacional,
+        talla_ropa,numero_calzado} = req.body;
         try {
-            const query = `INSERT INTO postulante_contratado (fecha_postulacion,
-                                                              rut,
-                                                              nombres,
-                                                              apellidos,
-                                                              edad,
-                                                              fecha_nacimiento,
-                                                              genero,
-                                                              nacionalidad,
-                                                              direccion,
-                                                              comuna,
-                                                              estado_civil,
-                                                              email,
-                                                              telefono,
-                                                              tipo_trabajador,
-                                                              disponibilidad,
-                                                              tipo_inscripcion,
-                                                              labor,
-                                                              labor_sdt,
-                                                              otras_experiencias,
-                                                              ruta_archivo_cv,
-                                                              ultima_llamada,
-                                                              citacion_trabajar,
-                                                              asiste_trabajar,
-                                                              labor_actual,
-                                                              cuartel,
-                                                              cuartel_actual,
-                                                              disponible,
-                                                              estado,
-                                                              enrolado,
-                                                              numero_cuenta,
-                                                              afp,
-                                                              salud,
-                                                              banco,
-                                                              tipo_cuenta,
-                                                              turno,
-                                                              temporada,
-                                                              situacion_migratoria,
-                                                              telefono_emergencia,
-                                                              nivel_educacional,
-                                                              talla_ropa,
-                                                              numero_calzado,
-                                                              pase_movilidad,
-                                                              seguro_covid) 
-                                                              values( 
-                                                              '${fecha_postulacion}',
+            const query = `EXEC PINTCONT_I                   '${fecha_postulacion}',
                                                               '${rut}',
                                                               '${nombres}',
                                                               '${apellidos}',
@@ -496,33 +379,16 @@ router.post(`/postulante_packing`, ensureToken, async(req, res) => {
                                                               '${disponibilidad}',
                                                               '${tipo_inscripcion}',
                                                               '${labor}',
-                                                              '',
                                                               '${otras_experiencias}',
                                                               '${ruta_archivo_cv}',
-                                                              '',
-                                                              '',
-                                                              '',
-                                                              '',
-                                                              '',
-                                                              '',
                                                               '${disponible}',
-                                                              'Confirmado',
-                                                              'No',
-                                                              null,
-                                                              null,
-                                                              null,
-                                                              null,
-                                                              null,
-                                                              null,
                                                               '${temporada}',
                                                               '${situacion_migratoria}',
                                                               '${telefono_emergencia}',
                                                               '${nivel_educacional}',
                                                               '${talla_ropa}',
-                                                              '${numero_calzado}',
-                                                              '',
-                                                              '')`;
-            console.log(query);
+                                                              '${numero_calzado}'
+                                                              `;
             const pool = await poolPromise;
             const result = await pool.request()
                 .query(query);
@@ -542,9 +408,9 @@ router.get(`/remove_postulante`, async(req, res) => {
         if(err){
           console.error(err.message)
           if(err.message === 'jwt expired'){
-            res.end("<h1>Token expirado, No pudo ser verificado el email, favor de postular nuevamente <a href='http://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
+            res.end("<h1>Token expirado, No pudo ser verificado el email, favor de postular nuevamente <a href='https://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
         }
-        res.end("<h1>Algo salio mal, favor de postular nuevamente. <a href='http://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
+        res.end("<h1>Algo salio mal, favor de postular nuevamente. <a href='https://postulaciones.ranco.cl'>Pinchar Aqui.</a> </h1>");
         }else{
           console.log(verifiedJwt,'validado')
           try {
@@ -563,26 +429,11 @@ router.get(`/remove_postulante`, async(req, res) => {
  
 });
 
-router.get(`/postulante_update`, ensureToken, async(req, res) => {
-
-            try {
-                const query = `UPDATE POSTULANTE SET fecha_ingreso = '${req.body.fecha_ingreso}',rut = ${req.body.rut},nombres = ${req.body.nombres},apellidos = ${req.body.apellidos},email = ${req.body.email},telefono = ${req.body.telefono},fecha_nacimiento = '${req.body.fecha_nacimiento}',nacionalidad = ${req.body.nacionalidad}  WHERE id =  '${req.params.id}'  `;
-                console.log(query,'update')
-                const pool = await poolPromise;
-                const result = await pool.request()
-                    .query(query);
-                res.json(result.recordset);
-            } catch (err) {
-                res.status(500);
-                res.send(err.message);
-                console.log(err.message);
-            }
-});
 router.put(`/postulante_packing_id`, ensureToken, async(req, res) => {
     const {id} = req.body;
+    const opt = 1
             try {
-                const query = `UPDATE postulante SET email_validado = 0 WHERE id = '${id}' `;
-                console.log(query,'esta es la query eliminar')
+                const query = `EXEC PINT_U_ID ${id}, ${opt} `;
                 const pool = await poolPromise;
                 const result = await pool.request()
                     .query(query);
@@ -595,8 +446,9 @@ router.put(`/postulante_packing_id`, ensureToken, async(req, res) => {
 });
 router.put(`/postulante_remuneraciones_enrolar`, ensureToken, async(req, res) => {
     const {id} = req.body;
+    const opt = 2
             try {
-                const query = `UPDATE postulante_contratado SET enrolado = 'Si', fecha_ingreso = getdate() WHERE id = '${id}' `;
+                const query = `EXEC PINT_U_ID ${id}, ${opt}`;
                 //console.log(query,'esta es la query eliminar')
                 const pool = await poolPromise;
                 const result = await pool.request()
@@ -611,45 +463,35 @@ router.put(`/postulante_remuneraciones_enrolar`, ensureToken, async(req, res) =>
 router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
     const {id,fecha_postulacion,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,ruta_archivo_cv,ultima_llamada,citacion_trabajar,asiste_trabajar,labor_actual,cuartel_actual,disponible,estado,enrolado,numero_cuenta,afp,salud,banco,tipo_cuenta,nivel_educacional,turno,id_predio,id_cuartel,id_labor,pase_movilidad,seguro_covid} = req.body;
             try {
-                const query = `UPDATE postulante_contratado SET edad = ${edad},
-                                                   fecha_postulacion = '${fecha_postulacion}',
-                                                             nombres = '${nombres}',
-                                                           apellidos = '${apellidos}',
-                                                               email = '${email}',
-                                                    fecha_nacimiento = '${fecha_nacimiento}',
-                                                              genero = '${genero}',
-                                                     ruta_archivo_cv = '',
-                                                        nacionalidad = '${nacionalidad}',
-                                                           direccion = '${direccion}',
-                                                              comuna = '${comuna}',
-                                                        estado_civil = '${estado_civil}',
-                                                            telefono = '${telefono}',
-                                                      disponibilidad = '',
-                                                    tipo_inscripcion = '',
-                                                               labor = '',
-                                                  otras_experiencias = '',
-                                                      ultima_llamada = '',
-                                                   citacion_trabajar = '',
-                                                     asiste_trabajar = '', 
-                                                        labor_actual = '',
-                                                      cuartel_actual = '',
-                                                          disponible = '${disponible}',
-                                                              estado = '${estado}',
-                                                            enrolado = '${enrolado}',
-                                                       numero_cuenta = '${numero_cuenta}',
-                                                                 afp = '${afp}',
-                                                               salud = '${salud}',
-                                                               banco = '${banco}',
-                                                         tipo_cuenta = '${tipo_cuenta}',
-                                                   nivel_educacional = '${nivel_educacional}',
-                                                               turno = '${turno}',
-                                                           id_predio = '${id_predio}',
-                                                          id_cuartel = '${id_cuartel}',
-                                                            id_labor = '${id_labor}',
-                                                      pase_movilidad = '${pase_movilidad}',
-                                                        seguro_covid = '${seguro_covid}'
-                                                            WHERE id = '${id}'    `;
-                console.log(query,'esta es la query')
+                const query = `EXEC PINT_U                      @edad =  ${edad},
+                                                   @fecha_postulacion = '${fecha_postulacion}',
+                                                             @nombres = '${nombres}',
+                                                           @apellidos = '${apellidos}',
+                                                               @email = '${email}',
+                                                    @fecha_nacimiento = '${fecha_nacimiento}',
+                                                              @genero = '${genero}',
+                                                        @nacionalidad = '${nacionalidad}',
+                                                           @direccion = '${direccion}',
+                                                              @comuna = '${comuna}',
+                                                        @estado_civil = '${estado_civil}',
+                                                            @telefono = '${telefono}',
+                                                          @disponible = '${disponible}',
+                                                              @estado = '${estado}',
+                                                            @enrolado = '${enrolado}',
+                                                       @numero_cuenta = '${numero_cuenta}',
+                                                                 @afp = '${afp}',
+                                                               @salud = '${salud}',
+                                                               @banco = '${banco}',
+                                                         @tipo_cuenta = '${tipo_cuenta}',
+                                                   @nivel_educacional = '${nivel_educacional}',
+                                                               @turno = '${turno}',
+                                                           @id_predio = '${id_predio}',
+                                                          @id_cuartel = '${id_cuartel}',
+                                                            @id_labor = '${id_labor}',
+                                                      @pase_movilidad = '${pase_movilidad}',
+                                                        @seguro_covid = '${seguro_covid}',
+                                                             @id = ${id}
+                                                             `;
                 const pool = await poolPromise;
                 const result = await pool.request()
                     .query(query);
@@ -663,7 +505,7 @@ router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
 router.put(`/postulante_remuneraciones_faltante`, ensureToken, async(req, res) => {
     const {id,numero_cuenta,afp,salud,banco,tipo_cuenta,nivel_educacional,estado,enrolado} = req.body;
             try {
-                const query = `UPDATE postulante_contratado SET numero_cuenta = '${numero_cuenta}', afp = '${afp}',salud = '${salud}',banco = '${banco}',tipo_cuenta = '${tipo_cuenta}',nivel_educacional = '${nivel_educacional}',estado = '${estado}',enrolado = '${enrolado}'  WHERE id = '${id}'    `;
+                const query = `EXEC PINT_U_FALTANTE @numero_cuenta = '${numero_cuenta}', @afp = '${afp}', @salud = '${salud}',@banco = '${banco}',@tipo_cuenta = '${tipo_cuenta}',@nivel_educacional = '${nivel_educacional}',@estado = '${estado}',@enrolado = '${enrolado}',id = ${id}, @opt = 2 `;
                 console.log(query,'esta es la query')
                 const pool = await poolPromise;
                 const result = await pool.request()
@@ -675,59 +517,10 @@ router.put(`/postulante_remuneraciones_faltante`, ensureToken, async(req, res) =
                 console.log(err.message);
             }
 });
-router.put(`/postulante_packing`, ensureToken, async(req, res) => {
-    const {id,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,situacion_migratoria,telefono_emergencia,nivel_educacional,talla_ropa,numero_calzado} = req.body;
-            try {
-                const query = `UPDATE postulante SET nombres = '${nombres}',
-                                                     apellidos = '${apellidos}',
-                                                     email = '${email}',
-                                                     fecha_nacimiento = '${fecha_nacimiento}',
-                                                     genero = '${genero}',
-                                                     nacionalidad = '${nacionalidad}',
-                                                     direccion = '${direccion}',
-                                                     comuna = '${comuna}',
-                                                     estado_civil = '${estado_civil}',
-                                                     telefono = '${telefono}',
-                                                     tipo_trabajador = '${tipo_trabajador}',
-                                                     disponibilidad = '${disponibilidad}',
-                                                     tipo_inscripcion = '${tipo_inscripcion}',
-                                                     labor = '${labor}',
-                                                     otras_experiencias = '${otras_experiencias}',
-                                                     telefono_emergencia = '${telefono_emergencia}',
-                                                     situacion_migratoria = '${situacion_migratoria}',
-                                                     nivel_educacional = '${nivel_educacional}',
-                                                     talla_ropa = '${talla_ropa}',
-                                                     numero_calzado = '${numero_calzado}'
-                                                     WHERE id = '${id}' 
-                                                     and email_validado = 1
-                                                     and temporada = 'R6' `;
-                const pool = await poolPromise;
-                const result = await pool.request()
-                    .query(query);
-                res.json(result.recordset);
-            } catch (err) {
-                res.status(500);
-                res.send(err.message);
-                console.log(err.message);
-            }
-});
-router.delete(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
-    const {id} = req.body;
-            try {
-                const query = `DELETE FROM postulante_contratado WHERE id = '${id}' `;
-                const pool = await poolPromise;
-                const result = await pool.request()
-                    .query(query);
-                res.json(result.recordset);
-            } catch (err) {
-                res.status(500);
-                res.send(err.message);
-                console.log(err.message);
-            }
-});
+
 router.get(`/labores_sdt`, ensureToken, async(req, res) => {
             try {
-                const query = `SELECT a.IdActividad,dbo.InitCap(a.Nombre) AS 'Labor' FROM bsis_rem_afr.dbo.Actividades a WHERE a.IdEmpresa = 3`;
+                const query = `EXEC PINT_G_LABORES`;
                 const pool = await poolPromise;
                 const result = await pool.request()
                     .query(query);
@@ -740,7 +533,7 @@ router.get(`/labores_sdt`, ensureToken, async(req, res) => {
 });
 router.get(`/cuarteles_sdt`, ensureToken, async(req, res) => {
             try {
-                const query = `SELECT ca.IdCuartel,dbo.initcap(ca.Nombre) AS Cuartel FROM bsis_rem_afr.dbo.Cuartel ca WHERE ca.IdEmpresa = 3`;
+                const query = `EXEC PINT_G_CUARTELES`;
                 const pool = await poolPromise;
                 const result = await pool.request()
                     .query(query);
@@ -752,7 +545,7 @@ router.get(`/cuarteles_sdt`, ensureToken, async(req, res) => {
             }
 });
 
-/*Nuevo desarrollo R6*/
+/*Nuevo desarrollo R7*/
 router.get(`/predios`, ensureToken, async(req, res) => {
             try {
                 const query = `Exec SPC_getPrediosPostulantes`;

@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Configurar cabeceras
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Origin', 'https://ingresos.ranco.cl');
+    // res.header('Access-Control-Allow-Origin', 'https://ingresos.ranco.cl');
    // res.header('Access-Control-Allow-Origin', 'https://app.relojcontrol.com');
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     next();
@@ -40,13 +40,13 @@ app.use(function(req, res, next) {
 });
 
 //Levantar el Servidor
-/*
-const server = app.listen( 3000, () => {
-    const port = server.address().port;
-    console.log(`Conexion levantada con el puerto:${port}`);
 
-});
-*/
+// const server = app.listen( 3000, () => {
+//     const port = server.address().port;
+//     console.log(`Conexion levantada con el puerto:${port}`);
+
+// });
+
 const levantarServidor = async () => {
 
     try {
