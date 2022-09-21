@@ -325,8 +325,21 @@ router.get(`/postulantes_validados`, ensureToken, async(req, res) => {
 router.get(`/login`, ensureToken, async(req, res) => {
     const {correo} = req.query
     try {
-        const query = `EXEC login '${correo}'`;
-        console.log(query)
+        const query = `EXEC PINT_LOGIN '${correo}'`;
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500);
+        res.send(err.message);
+        console.log(err.message);
+    }
+});
+router.get(`/listaNegra`, ensureToken, async(req, res) => {
+    const {correo} = req.query
+    try {
+        const query = `EXEC PINT_listaNegra`;
         const pool = await poolPromise;
         const result = await pool.request()
             .query(query);
