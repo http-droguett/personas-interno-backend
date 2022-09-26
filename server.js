@@ -10,11 +10,10 @@ const https = require('https');
 const fs = require('fs');
 const bodyParser = require('body-parser');
 
-
 // Middlewares
 const corsOptions ={
    origin:'*', 
-   credentials:true,            //access-control-allow-credentials:true
+   credentials:true,          
    optionSuccessStatus:200,
 }
 app.use(cors(corsOptions));
@@ -24,9 +23,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Configurar cabeceras
 app.use((req, res, next) => {
+    // res.header('Access-Control-Allow-Origin', 'https://app.relojcontrol.com');
     res.header('Access-Control-Allow-Origin', '*');
-    // res.header('Access-Control-Allow-Origin', 'https://ingresos.ranco.cl');
-   // res.header('Access-Control-Allow-Origin', 'https://app.relojcontrol.com');
     res.header('Access-Control-Allow-Headers', 'Authorization, X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Request-Method');
     next();
 });
@@ -55,7 +53,7 @@ const levantarServidor = async () => {
             cert: fs.readFileSync('wildcard_ranco_cl.crt'),
             key: fs.readFileSync('wildcard_ranco_cl.key')
         }, await app)
-        .listen(3035,function(){
+        .listen(3000,function(){
         })
 
     } catch (error) {
