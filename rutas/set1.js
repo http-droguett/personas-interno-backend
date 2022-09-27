@@ -544,6 +544,20 @@ router.put(`/postulante_remuneraciones_enrolar`, ensureToken, async(req, res) =>
                 console.log(err.message);
             }
 });
+router.put(`/update_epp`, ensureToken, async(req, res) => {
+    const {id,epp} = req.body;
+            try {
+                const query = `EXEC PINT_EPP ${id}, ${epp}`;
+                const pool = await poolPromise;
+                const result = await pool.request()
+                    .query(query);
+                res.json({resultado:1});
+            } catch (err) {
+                res.status(500);
+                res.send(err.message);
+                console.log(err.message);
+            }
+});
 router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
     const {id,fecha_postulacion,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
         comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,
