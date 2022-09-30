@@ -697,6 +697,19 @@ router.get(`/labor_cuartel`, ensureToken, async(req, res) => {
         console.log(err.message);
     }
 });
+router.get(`/paginas`, ensureToken, async(req, res) => {
+    try {
+        const query = `EXEC PINT_PAGINAS`;
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500);
+        res.send(err.message);
+        console.log(err.message);
+    }
+});
 
 router.post('/loginRanco_Secret_', async(req, res) => {
     const user = { id: 3 };
