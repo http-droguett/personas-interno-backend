@@ -29,7 +29,7 @@ const smtpTransport = nodemailer.createTransport({
 });
 
 router.post('/send', ensureToken,function(req,res){
-    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,situacion_migratoria,nivel_educacional,talla_ropa,numero_calzado,temporada} = req.body;
+    const {planta,fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,situacion_migratoria,nivel_educacional,talla_ropa,numero_calzado,temporada} = req.body;
     const user = { id: 3 };
     const token = jwt.sign({ user }, 'Api_Ranco_Key_01_04_2019', {expiresIn: '168h'})
     host=req.get('host');
@@ -102,6 +102,13 @@ router.post('/send', ensureToken,function(req,res){
              </tr>
             </thead>   
             <tbody>
+                <tr>
+                    <td colspan="4">Planta a la que postuló</td>
+                </tr>
+                <tr>
+                    <td colspan="4">${planta}</td>
+                </tr>
+                <tr>
                     <td>Rut</td>
                     <td>Nombres</td>
                     <td>Apellidos</td>
@@ -371,12 +378,19 @@ router.get(`/listaNegra`, ensureToken, async(req, res) => {
 
 router.post(`/postulante`, ensureToken, async(req, res) => {
     
-    const {fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,
+    const {planta,fecha_postulacion,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,
         direccion,comuna,estado_civil,email,telefono,telefono_emergencia,tipo_trabajador,disponibilidad,
         tipo_inscripcion,labor,otras_experiencias,email_validado,ruta,temporada,situacion_migratoria,nivel_educacional,
          talla_ropa, numero_calzado,calle,numero,villa,nombre_emergencia} = req.body;
         try {
-            const query = `EXEC POSTULANTE_I '${fecha_postulacion}','${rut}','${nombres}','${apellidos}','${fecha_nacimiento}','${genero}',
+
+            console.log(`EXEC POSTULANTE_I '${planta}','${fecha_postulacion}','${rut}','${nombres}','${apellidos}','${fecha_nacimiento}','${genero}',
+            '${nacionalidad}','${direccion}','${comuna}','${estado_civil}','${email}','${telefono}','${telefono_emergencia}','${tipo_trabajador}',
+            '${disponibilidad}','${tipo_inscripcion}','${labor}','${otras_experiencias}',${email_validado},'${ruta}','${temporada}','${situacion_migratoria}',
+            '${nivel_educacional}','${talla_ropa}','${numero_calzado}','${calle}',${numero},'${villa}','${nombre_emergencia}' `);
+
+
+            const query = `EXEC POSTULANTE_I '${planta}','${fecha_postulacion}','${rut}','${nombres}','${apellidos}','${fecha_nacimiento}','${genero}',
             '${nacionalidad}','${direccion}','${comuna}','${estado_civil}','${email}','${telefono}','${telefono_emergencia}','${tipo_trabajador}',
             '${disponibilidad}','${tipo_inscripcion}','${labor}','${otras_experiencias}',${email_validado},'${ruta}','${temporada}','${situacion_migratoria}',
             '${nivel_educacional}','${talla_ropa}','${numero_calzado}','${calle}',${numero},'${villa}','${nombre_emergencia}' `;
@@ -393,13 +407,48 @@ router.post(`/postulante`, ensureToken, async(req, res) => {
 });
 router.post(`/postulante_packing`, ensureToken, async(req, res) => {
     
-    const {fecha_postulacion,labor_actual,cuartel,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
+    const {planta,fecha_postulacion,labor_actual,cuartel,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
         comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,
         labor_sdt,otras_experiencias,ruta_archivo_cv,ultima_llamada,citacion_trabajar,asiste_trabajar,
         cuartel_actual,disponible,turno, temporada,situacion_migratoria,telefono_emergencia,nivel_educacional,
-        talla_ropa,numero_calzado,calle,numero,villa,nombre_emergencia} = req.body;
+        talla_ropa,numero_calzado,calle,numero,villa,nombre_emergencia,fecha_ingreso} = req.body;
+        
+        console.log(`EXEC PINTCONT_I                    '${planta}',
+        '${fecha_postulacion}',
+        '${rut}',
+        '${nombres}',
+        '${apellidos}',
+         ${edad},
+        '${fecha_nacimiento}',
+        '${genero}',
+        '${nacionalidad}',
+        '${direccion}',
+        '${comuna}',
+        '${estado_civil}',
+        '${email}',
+        '${telefono}',
+        '${tipo_trabajador}',
+        '${disponibilidad}',
+        '${tipo_inscripcion}',
+        '${labor}',
+        '${otras_experiencias}',
+        '${ruta_archivo_cv}',
+        '${disponible}',
+        '${temporada}',
+        '${situacion_migratoria}',
+        '${telefono_emergencia}',
+        '${nivel_educacional}',
+        '${talla_ropa}',
+        '${numero_calzado}',
+        '${calle}',
+         ${numero},
+        '${villa}',
+        '${nombre_emergencia}'
+        `);
+
         try {
-            const query = `EXEC PINTCONT_I                   '${fecha_postulacion}',
+            const query = `EXEC PINTCONT_I                    '${planta}',
+                                                              '${fecha_postulacion}',
                                                               '${rut}',
                                                               '${nombres}',
                                                               '${apellidos}',
@@ -471,11 +520,12 @@ router.get(`/remove_postulante`, async(req, res) => {
 });
 
 router.put(`/postulante_packing`, ensureToken, async(req, res) => {
-    const {id,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,
+    const {id,planta,rut,nombres,apellidos,fecha_nacimiento,genero,nacionalidad,direccion,comuna,estado_civil,
         email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,otras_experiencias,
         situacion_migratoria,telefono_emergencia,nivel_educacional,talla_ropa,numero_calzado,calle,numero,villa,temporada,nombre_emergencia} = req.body;
             try {
-                const query = `EXEC POSTULANTE_U    @nombres = '${nombres}',
+                const query = `EXEC POSTULANTE_U    @planta = '${planta}',
+                                                    @nombres = '${nombres}',
                                                     @apellidos = '${apellidos}',
                                                     @email = '${email}',
                                                     @fecha_nacimiento = '${fecha_nacimiento}',
@@ -559,7 +609,8 @@ router.put(`/update_epp`, ensureToken, async(req, res) => {
             }
 });
 router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
-    const {id,fecha_postulacion,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
+    console.log('entro');
+    const {id,planta,fecha_postulacion,rut,nombres,apellidos,edad,fecha_nacimiento,genero,nacionalidad,direccion,
         comuna,estado_civil,email,telefono,tipo_trabajador,disponibilidad,tipo_inscripcion,labor,
         otras_experiencias,ruta_archivo_cv,ultima_llamada,citacion_trabajar,asiste_trabajar,
         labor_actual,cuartel_actual,disponible,estado,enrolado,numero_cuenta,afp,salud,
@@ -567,7 +618,45 @@ router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
         calle,numero,villa,nombre_emergencia
     } = req.body;
             try {
-                const query = `EXEC PINT_U                      @edad =  ${edad},
+                
+                console.log('procedure',`EXEC PINT_U                    @planta =  ${planta},
+                @edad =  ${edad},
+   @fecha_postulacion = '${fecha_postulacion}',
+             @nombres = '${nombres}',
+           @apellidos = '${apellidos}',
+               @email = '${email}',
+    @fecha_nacimiento = '${fecha_nacimiento}',
+              @genero = '${genero}',
+        @nacionalidad = '${nacionalidad}',
+           @direccion = '${direccion}',
+              @comuna = '${comuna}',
+        @estado_civil = '${estado_civil}',
+            @telefono = '${telefono}',
+          @disponible = '${disponible}',
+              @estado = '${estado}',
+            @enrolado = '${enrolado}',
+       @numero_cuenta = '${numero_cuenta}',
+                 @afp = '${afp}',
+               @salud = '${salud}',
+               @banco = '${banco}',
+         @tipo_cuenta = '${tipo_cuenta}',
+   @nivel_educacional = '${nivel_educacional}',
+               @turno = '${turno}',
+           @id_predio = '${id_predio}',
+          @id_cuartel = '${id_cuartel}',
+            @id_labor = '${id_labor}',
+      @pase_movilidad = '${pase_movilidad}',
+        @seguro_covid = '${seguro_covid}',
+               @calle = '${calle}',
+              @numero = ${numero},
+               @villa = '${villa}',
+   @nombre_emergencia = '${nombre_emergencia}',
+                  @id = ${id}
+             `);
+
+
+                const query = `EXEC PINT_U                    @planta = '${planta}',
+                                                                @edad =  ${edad},
                                                    @fecha_postulacion = '${fecha_postulacion}',
                                                              @nombres = '${nombres}',
                                                            @apellidos = '${apellidos}',
@@ -594,11 +683,11 @@ router.put(`/postulante_remuneraciones`, ensureToken, async(req, res) => {
                                                             @id_labor = '${id_labor}',
                                                       @pase_movilidad = '${pase_movilidad}',
                                                         @seguro_covid = '${seguro_covid}',
-                                                        @calle = '${calle}',
-                                                        @numero = ${numero},
-                                                        @villa = '${villa}',
-                                                        @nombre_emergencia = '${nombre_emergencia}',
-                                                             @id = ${id}
+                                                               @calle = '${calle}',
+                                                              @numero = ${numero},
+                                                               @villa = '${villa}',
+                                                   @nombre_emergencia = '${nombre_emergencia}',
+                                                                  @id = ${id}
                                                              `;
                 const pool = await poolPromise;
                 const result = await pool.request()

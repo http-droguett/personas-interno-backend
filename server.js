@@ -37,18 +37,20 @@ app.use(function(req, res, next) {
     res.send('Ruta Inexistente');
 });
 
-//Levantar el Servidor
-
-// const server = app.listen( 3000, () => {
-//     const port = server.address().port;
-//     console.log(`Conexion levantada con el puerto:${port}`);
-
-// });
-
 const levantarServidor = async () => {
 
     try {
+        
+        //Local
+        /*
+        const server = app.listen( 3000, () => {
+            const port = server.address().port;
+            console.log(`Conexion levantada con el puerto:${port}`);
+        
+        });
+        */
 
+        //Server
         https.createServer({
             cert: fs.readFileSync('wildcard_ranco_cl.crt'),
             key: fs.readFileSync('wildcard_ranco_cl.key')
